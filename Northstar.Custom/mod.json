@@ -1,7 +1,7 @@
 {
   "Name": "Northstar.Custom",
   "Description": "Custom content for Northstar: extra weapons, gamemodes, etc.",
-  "Version": "1.10.18",
+  "Version": "1.12.5",
   "LoadPriority": 1,
   "ConVars": [
     {
@@ -102,6 +102,10 @@
       "RunOn": "SERVER && MP"
     },
     {
+      "Path": "gamemodes/_gamemode_fw.nut",
+      "RunOn": "SERVER && MP"
+    },
+    {
       "Path": "gamemodes/sh_gamemode_fw_custom.nut",
       "RunOn": "( CLIENT || SERVER ) && MP",
       "ClientCallback": {
@@ -114,6 +118,10 @@
     {
       "Path": "gamemodes/sh_gamemode_fw.nut",
       "RunOn": "( CLIENT || SERVER ) && MP"
+    },
+    {
+      "Path": "gamemodes/cl_gamemode_fw_custom.nut",
+      "RunOn": "CLIENT && MP"
     },
     {
       "Path": "gamemodes/cl_gamemode_fw.nut",
@@ -423,6 +431,10 @@
       "ServerCallback": {
         "Before": "MessageUtils_ServerInit"
       }
+    },
+    {
+      "Path": "sh_northstar_http_requests.gnut",
+      "RunOn": "CLIENT || SERVER || UI"
     }
   ],
   "Localisation": [

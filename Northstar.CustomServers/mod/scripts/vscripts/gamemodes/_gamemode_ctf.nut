@@ -65,6 +65,9 @@ void function CaptureTheFlag_Init()
 	ScoreEvent_SetEarnMeterValues( "FlagCapture", 0.0, 0.30 )
 	ScoreEvent_SetEarnMeterValues( "FlagCaptureAssist", 0.0, 0.20 )
 	ScoreEvent_SetEarnMeterValues( "FlagReturn", 0.0, 0.20 )
+
+	// nscn specifics
+	SetShouldPlayDefaultMusic( true )
 }
 
 void function RateSpawnpoints_CTF( int checkClass, array<entity> spawnpoints, int team, entity player ) 
@@ -126,15 +129,19 @@ void function OnPlayerKilled( entity victim, entity attacker, var damageInfo )
 void function CreateFlags()
 {	
 	if ( IsValid( file.imcFlagSpawn ) )
-	{
 		file.imcFlagSpawn.Destroy()
+	if( IsValid( file.imcFlag ) )
 		file.imcFlag.Destroy()
+	if( IsValid( file.imcFlagReturnTrigger ) )
 		file.imcFlagReturnTrigger.Destroy()
 		
+	if( IsValid( file.militiaFlagSpawn ) )
 		file.militiaFlagSpawn.Destroy()
+	if( IsValid( file.militiaFlag ) )
 		file.militiaFlag.Destroy()
+	if( IsValid( file.militiaFlagReturnTrigger ) )
 		file.militiaFlagReturnTrigger.Destroy()
-	}
+	
 
 	foreach ( entity spawn in GetEntArrayByClass_Expensive( "info_spawnpoint_flag" ) )
 	{
@@ -224,17 +231,18 @@ void function RemoveFlags()
 {
 	// destroy all the flag related things
 	if ( IsValid( file.imcFlagSpawn ) )
-	{
 		file.imcFlagSpawn.Destroy()
+	if( IsValid( file.imcFlag ) )
 		file.imcFlag.Destroy()
+	if( IsValid( file.imcFlagReturnTrigger ) )
 		file.imcFlagReturnTrigger.Destroy()
-	}
-	if ( IsValid( file.militiaFlagSpawn ) )
-	{
+		
+	if( IsValid( file.militiaFlagSpawn ) )
 		file.militiaFlagSpawn.Destroy()
+	if( IsValid( file.militiaFlag ) )
 		file.militiaFlag.Destroy()
+	if( IsValid( file.militiaFlagReturnTrigger ) )
 		file.militiaFlagReturnTrigger.Destroy()
-	}
 
 	// unsure if this is needed, since the flags are destroyed? idk
 	SetFlagStateForTeam( TEAM_MILITIA, eFlagState.None )
@@ -246,6 +254,7 @@ void function TrackFlagReturnTrigger( entity flag, entity returnTrigger )
 	// this is a bit of a hack, it seems parenting the return trigger to the flag actually sets the pickup radius of the flag to be the same as the trigger
 	// this isn't wanted since only pickups should use that additional radius
 	flag.EndSignal( "OnDestroy" )
+	returnTrigger.EndSignal( "OnDestroy" )
 		
 	while ( true )
 	{
@@ -451,7 +460,10 @@ void function OnPlayerEntersFlagReturnTrigger( entity trigger, entity player )
 	else
 		flag = file.militiaFlag
 
-	if( !IsValid( flag ) || !IsValid( player ) )
+	if( !IsValid( flag ) )
+		return
+	
+	if( !IsValid( player ) )
 		return
 	
 	if ( !player.IsPlayer() || player.IsTitan() || player.GetTeam() != flag.GetTeam() || IsFlagHome( flag ) || flag.GetParent() != null )
@@ -462,11 +474,15 @@ void function OnPlayerEntersFlagReturnTrigger( entity trigger, entity player )
 
 void function OnPlayerExitsFlagReturnTrigger( entity trigger, entity player )
 {
+	StopSoundOnEntity( player, "UI_CTF_1P_FlagReturnMeter" ) // always do this...
+	
 	entity flag
 	if ( trigger.GetTeam() == TEAM_IMC )
 		flag = file.imcFlag
 	else
 		flag = file.militiaFlag
+	if( !IsValid( flag ) ) // defensive fix
+		return
 		
 	if ( !player.IsPlayer() || player.IsTitan() || player.GetTeam() != flag.GetTeam() || IsFlagHome( flag ) || flag.GetParent() != null )
 		return
@@ -490,13 +506,13 @@ void function TryReturnFlag( entity player, entity flag )
 	player.EndSignal( "FlagReturnEnded" )
 	flag.EndSignal( "FlagReturnEnded" ) // avoid multiple players to return one flag at once
 	player.EndSignal( "OnDeath" )
+	player.EndSignal( "OnDestroy" ) // defensive fix
 	
 	wait CTF_GetFlagReturnTime()
 	
 	// flag return succeeded
 	// return flag
 	ResetFlag( flag )
-	flag.Signal( "FlagReturnEnded" )
 
 	// do notifications for return
 	MessageToPlayer( player, eEventNotifications.YouReturnedFriendlyFlag )
@@ -510,4 +526,6 @@ void function TryReturnFlag( entity player, entity flag )
 	MessageToTeam( GetOtherTeam( flag.GetTeam() ), eEventNotifications.PlayerReturnedEnemyFlag, null, player )
 	EmitSoundOnEntityToTeam( flag, "UI_CTF_3P_EnemyReturnsFlag", GetOtherTeam( flag.GetTeam() ) )
 	PlayFactionDialogueToTeam( "ctf_flagReturnedEnemy", GetOtherTeam( flag.GetTeam() ) )
+
+	flag.Signal( "FlagReturnEnded" )
 }
